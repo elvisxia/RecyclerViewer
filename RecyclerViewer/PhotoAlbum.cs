@@ -114,7 +114,7 @@ namespace RecyclerViewer
             };
 
         // Array of photos that make up the album:
-        private Photo[] mPhotos;
+        private List<Photo> mPhotos;
 
         // Random number generator for shuffling the photos:
         Random mRandom;
@@ -123,20 +123,36 @@ namespace RecyclerViewer
         // create the random number generator:
         public PhotoAlbum ()
         {
-            mPhotos = mBuiltInPhotos;
+            mPhotos =new List<Photo>( mBuiltInPhotos);
             mRandom = new Random();
         }
 
         // Return the number of photos in the photo album:
         public int NumPhotos 
         { 
-            get { return mPhotos.Length; } 
+            get { return mPhotos.Count; } 
         }
 
         // Indexer (read only) for accessing a photo:
         public Photo this[int i] 
         {
             get { return mPhotos[i]; }
+        }
+
+        public void UpdateAt(int position, Photo photo)
+        {
+            if (photo != null)
+                mPhotos[position] = photo;
+        }
+
+        public Photo GetAt(int position)
+        {
+            return mPhotos[position];
+        }
+
+        public void RemoveAt(int position)
+        {
+            mPhotos.RemoveAt(position);
         }
 
         // Pick a random photo and swap it with the top:
@@ -147,7 +163,7 @@ namespace RecyclerViewer
 
             // Generate a next random index between 1 and 
             // Length (noninclusive):
-            int rnd = mRandom.Next(1, mPhotos.Length);
+            int rnd = mRandom.Next(1, mPhotos.Count);
 
             // Exchange top photo with randomly-chosen photo:
             mPhotos[0] = mPhotos[rnd];
@@ -161,14 +177,14 @@ namespace RecyclerViewer
         public void Shuffle ()
         {  
             // Use the Fisher-Yates shuffle algorithm:
-            for (int idx = 0; idx < mPhotos.Length; ++idx)
+            for (int idx = 0; idx < mPhotos.Count; ++idx)
             {
                 // Save the photo at idx:
                 Photo tmpPhoto = mPhotos[idx];
 
                 // Generate a next random index between idx (inclusive) and 
                 // Length (noninclusive):
-                int rnd = mRandom.Next(idx, mPhotos.Length);
+                int rnd = mRandom.Next(idx, mPhotos.Count);
 
                 // Exchange photo at idx with randomly-chosen (later) photo:
                 mPhotos[idx] = mPhotos[rnd];

@@ -58,7 +58,7 @@ namespace RecyclerViewer
             // Create an adapter for the RecyclerView, and pass it the
             // data set (the photo album) to manage:
 			mAdapter = new PhotoAlbumAdapter (mPhotoAlbum,this);
-
+            
             // Register the item click handler (below) with the adapter:
             mAdapter.ItemClick += OnItemClick;
 
@@ -94,7 +94,8 @@ namespace RecyclerViewer
             int photoNum = position + 1;
             Toast.MakeText(this, "This is photo number " + photoNum, ToastLength.Short).Show();
         }
-	}
+        
+    }
 
     //----------------------------------------------------------------------
     // VIEW HOLDER
@@ -108,7 +109,7 @@ namespace RecyclerViewer
         public TextView Caption { get; private set; }
 
         // Get references to the views defined in the CardView layout.
-        public PhotoViewHolder (View itemView, Action<int> listener,Action<object,View.LongClickEventArgs> longClickListener) 
+        public PhotoViewHolder (View itemView, Action<int> listener,Action<object,View.LongClickEventArgs,int> longClickListener) 
             : base (itemView)
         {
             // Locate and cache view references:
@@ -118,7 +119,7 @@ namespace RecyclerViewer
             // Detect user clicks on the item view and report which item
             // was clicked (by position) to the listener:
             itemView.Click += (sender, e) => listener (base.Position);
-            ItemView.LongClick +=(sender,e)=> longClickListener(sender,e);
+            ItemView.LongClick +=(sender,e)=> longClickListener(sender,e,base.Position);
         }
         
     }
@@ -140,6 +141,8 @@ namespace RecyclerViewer
 
         //
         private MyActionMode mActionMode;
+
+        private ActionMode mode;
 
         // Load the adapter with the data set (photo album) at construction time:
         public PhotoAlbumAdapter (PhotoAlbum photoAlbum)
@@ -167,13 +170,23 @@ namespace RecyclerViewer
             return vh;
         }
 
-        void OnLongClick(object sender, View.LongClickEventArgs args)
+        void OnLongClick(object sender, View.LongClickEventArgs args,int position)
         {
-            mActionMode = new MyActionMode(mActivity);
-            mActivity.StartActionMode(mActionMode);
+            mActionMode = new MyActionMode(mActivity,this,position);
+            mode=mActivity.StartActionMode(mActionMode);
             ((View)sender).Selected = true;
             return;
         }
+
+        public void FinishActionMode()
+        {
+            if (mode != null)
+            {
+                mode.Finish();
+            }
+        }
+
+        
 
         // Fill in the contents of the photo card (invoked by the layout manager):
         public override void 
@@ -185,6 +198,13 @@ namespace RecyclerViewer
             // from this position in the photo album:
             vh.Image.SetImageResource (mPhotoAlbum[position].PhotoID);
             vh.Caption.Text = mPhotoAlbum[position].Caption;
+        }
+
+        public void RemoveAt(int position)
+        {
+            mPhotoAlbum.RemoveAt(position);
+            NotifyItemRemoved(position);
+            NotifyItemRangeChanged(position, 1);
         }
 
         // Return the number of photos available in the photo album:
@@ -205,9 +225,18 @@ namespace RecyclerViewer
     public class MyActionMode : Java.Lang.Object, ActionMode.ICallback
     {
         private Context mContext;
-        public MyActionMode(Context context)
+        private PhotoAlbumAdapter mAdapter;
+        private int currentPosition;
+        public MyActionMode(Context context):this(context,null,0)
+        {
+            
+        }
+
+        public MyActionMode(Context context, PhotoAlbumAdapter adapter,int position)
         {
             mContext = context;
+            mAdapter = adapter;
+            currentPosition = position;
         }
 
         public bool OnActionItemClicked(ActionMode mode, IMenuItem item)
@@ -215,10 +244,12 @@ namespace RecyclerViewer
             switch (item.ItemId)
             {
                 case Resource.Id.itemOneId:
-                    // do whatever you want
+                    // do Delete
+                    mAdapter.RemoveAt(currentPosition);
+                    mAdapter.FinishActionMode();
                     return true;
                 case Resource.Id.itemTwoId:
-                    // do whatever you want
+                    // do Update
                     return true;
                 default:
                     return false;
